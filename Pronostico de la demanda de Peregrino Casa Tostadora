@@ -1,0 +1,212 @@
+#ANÁLISIS Y PRONÓSTICO DE LA SERIE DE TIEMPO DE PEREGRINO CASA TOSTADORA
+
+library(readxl)
+library(fpp2)
+
+
+file.choose()
+setwd("C:\\Users\\John\\Documents\\ME\\ING IND\\BUSINESS SERVICES\\PEREGRINO CASA TOSTADORA")
+
+
+    #Leemos la base de datos con la información de la demanda mensual
+
+data<-read_xlsx("Serie de tiempo mensual de la demanda de café en grano de Peregrino Casa Tostadora copia.xlsx")
+View(data)
+
+
+    #comando summary para obtener información básica de la demanda mensual
+summary(data)
+
+        #lo mínimo vendido por mes fueron 9.25 kg en el 12avo mes (Diciembre)
+        #lo máximo vendido por mes fueron 107 kg en el 6to mes (Junio)
+        #el promedio vendido por mes es de 48.58 kg 
+
+
+    #Creación de la serie de tiempo de la demanda mensual a lo largo de un año (2023) dividida en trimestres de Peregrino Casa Tostadora
+
+Peregrino_TimeSeries <- ts(data, frequency=3, start=1)
+
+autoplot(Peregrino_TimeSeries) +
+  labs(title = "Serie de tiempo",       
+       x = "2023",
+       y = "kg",
+       colour = "#00a0dc")+
+  theme_bw() 
+
+
+
+library(tseries)
+
+#Test de estacionariedad de la serie de tiempo de Peregrino Casa Tostadora
+
+#La hipótesis nula H0: que la serie de tiempo no es estacionaria
+#La hipótesis alternativa HA: que la serie de tiempo es estacionaria
+
+adf.test(Peregrino_TimeSeries)
+
+#Se acepta H0: La serie de tiempo no es estacionaria
+
+
+
+    #Descomposición de la serie de tiempo
+
+fit<-decompose(Peregrino_TimeSeries)
+  autoplot(fit)+
+  labs(title = "Descomposición de la serie de tiempo de Peregrino Casa Tostadora",                   
+       x = "2023",
+       y = "Kg",
+       colour = "Gears")+
+  theme_bw()
+
+  
+
+    #Gráfico de la serie de tiempo con su tendencia
+
+autoplot(Peregrino_TimeSeries, series="Serie tiempo") + 
+    autolayer(trendcycle(fit), series="Tendencia") +
+    labs(title = "Serie de tiempo",      
+         x = "2023",
+         y = "Kg"
+    ) + 
+    theme_bw()
+
+
+    #Gráfico de estacionalidad
+ggseasonplot(Peregrino_TimeSeries)
+
+      #ELABORACIONES DE LOS MÉTODOS DEL PRONÓSTICO
+
+      #MÉTODO NAIVE CONSIDERANDO ESTACIONARIEDAD
+m1 <- snaive(Peregrino_TimeSeries, h=3)
+
+      #graficando el pronóstico
+autoplot(m1)
+
+      #verificando el ajuste del método
+autoplot(m1)+autolayer(fitted(m1), series="Ajuste")
+
+      #verificando los residuales
+checkresiduals(m1)
+
+
+summary(m1)
+
+
+
+    #MÉTODO NAIVE SIMPLE
+m1.1 <- naive(Peregrino_TimeSeries, h=3)
+
+    #verificando el ajuste del método
+autoplot(m1.1)+autolayer(fitted(m1.1), series="Ajuste")
+
+    #verificando los residuales
+checkresiduals(m1.1)
+
+summary(m1.1)
+
+"el valor de p-value del método naive simple es 0.02901 < 0.05 por lo que es un buen modelo de pronóstico"
+
+
+
+    #MÉTODO EXPONENCIAL SUAVIZADO
+m1.2 <- ses(Peregrino_TimeSeries, h=3)
+
+    #verificando el ajuste del método
+autoplot(m1.2)+autolayer(fitted(m1.2), series="Ajuste")
+
+    #verificando los residuales
+checkresiduals(m1.2)
+
+summary(m1.2)
+
+
+
+    #MÉTODO MEDIA MOVIL
+m1.3 <- meanf(Peregrino_TimeSeries, h=3)
+
+    #verificando el ajuste del método
+autoplot(m1.3)+autolayer(fitted(m1.3), series="Ajuste")
+
+    #verificando los residuales
+checkresiduals(m1.3)
+
+summary(m1.3)
+
+
+
+    #MÉTODO DE REGRESIÓN
+
+    # elaborando la regresion
+regresion <- tslm(Peregrino_TimeSeries ~ trend + season)
+
+    # elaborando el pronostico
+m2 <- forecast(regresion, h=3)
+
+    # verificando el ajuste del método
+autoplot(m2)+autolayer(fitted(m2), series="Ajuste")
+
+    # verificando los residuales
+checkresiduals(m2)
+
+summary(m2)
+
+
+"el p value es mayor que 0.05 sin embargo el ajuste se acerca mucho a la demanda real por lo que
+debemos de tomar en cuenta el pronóstico total para los siguientes 3 meses el cual es de 30kg por los 3 meses siguientes"
+
+    #MÉTODO HOLT WINTERS
+
+    # elaborando el pronostico
+m3 <- hw(Peregrino_TimeSeries, h=3, seasonal = 'multiplicative')
+
+    # verificando el ajuste del método
+autoplot(m3)+autolayer(fitted(m3), series="Ajuste")
+
+    # verificando los residuales
+checkresiduals(m3)
+
+summary(m3)
+
+
+
+
+    #MÉTODO ARIMA
+
+    # elaborando el modelo ARIMA
+modelo_arima <- auto.arima(Peregrino_TimeSeries)
+
+    # elaborando el pronostico
+m4 <- forecast(modelo_arima, h=3)
+
+    # graficando el pronóstico
+autoplot(m4)
+
+    # verificando el ajuste del método
+autoplot(m4)+autolayer(fitted(m4), series="Ajuste")
+
+    # verificando los residuales
+checkresiduals(m4)
+
+summary(m4)
+
+
+
+    #MÉTODO DE RED NEURONAL
+
+    # elaborando el modelo de red neuronal
+neural_network <- nnetar(Peregrino_TimeSeries)
+
+    # elaborando el pronostico
+m5 <- forecast(neural_network, h=3)
+
+    # graficando el pronóstico
+autoplot(m5)
+
+    # verificando el ajuste del método
+autoplot(m5)+autolayer(fitted(m5), series="Ajuste")
+
+    # verificando los residuales
+checkresiduals(m5)
+
+summary(m5)
+
